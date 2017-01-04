@@ -1,0 +1,11 @@
+# Eclipse
+.classpath
+.project
+.settings/
+email-conf.xml
+datasource-config.xml
+
+
+# Maven
+target/
+

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:cache="http://www.springframework.org/schema/cache"
+	xmlns:ehcache="http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring"
+	xmlns:task="http://www.springframework.org/schema/task" xmlns:amq="http://activemq.apache.org/schema/core"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/util
+	http://www.springframework.org/schema/util/spring-util-4.2.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx-4.2.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/cache
+	http://www.springframework.org/schema/cache/spring-cache.xsd
+	http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring
+	http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring/ehcache-spring-1.2.xsd
+	http://www.springframework.org/schema/task
+	http://www.springframework.org/schema/task/spring-task-4.2.xsd
+	http://activemq.apache.org/schema/core 
+	http://activemq.apache.org/schema/core/activemq-core.xsd
+	http://www.springframework.org/schema/rabbit 
+	http://www.springframework.org/schema/rabbit/spring-rabbit-1.5.xsd">
+
+
+	<rabbit:connection-factory id="connectionFactory"
+		host="localhost" username="guest" password="guest" />
+	<rabbit:admin connection-factory="connectionFactory" />
+	<rabbit:template id="amqpTemplate" connection-factory="connectionFactory"
+		exchange="MY-EXCHANGE" />
+
+	<rabbit:queue id="orderQueue1" />
+	<rabbit:queue id="orderQueue3" />
+
+	<rabbit:topic-exchange id="myExchange" name="MY-EXCHANGE">
+		<rabbit:bindings>
+			<rabbit:binding queue="orderQueue1" pattern="#.1"></rabbit:binding>
+			<rabbit:binding queue="orderQueue3" pattern="#.3"></rabbit:binding>
+		</rabbit:bindings>
+	</rabbit:topic-exchange>
+
+
+	<bean id="aListener" class="ee.ttu.shop.order.OrderQueueListener" />
+
+	<rabbit:listener-container
+		connection-factory="connectionFactory">
+		<rabbit:listener ref="aListener" method="handleOrderDTO"
+			queues="orderQueue1" />
+		<rabbit:listener ref="aListener" method="removeOK"
+			queues="orderQueue3" />
+	</rabbit:listener-container>
+
+
+
+
+	<task:annotation-driven />
+
+
+
+
+	
+
+	<context:component-scan base-package="ee.ttu.shop">
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+		<context:exclude-filter type="regex"
+			expression=".*Test.*" />
+	</context:component-scan>
+
+	<import resource="email-conf.xml" />
+	<import resource="datasource-config.xml" />
+
+
+
+	<bean id="txManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+
+	<tx:annotation-driven transaction-manager="txManager" />
+
+	<import resource="security.xml" />
+</beans>

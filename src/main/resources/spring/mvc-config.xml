@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:cache="http://www.springframework.org/schema/cache"
+	xmlns:ehcache="http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/security
+	   http://www.springframework.org/schema/security/spring-security-4.0.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/cache
+	   http://www.springframework.org/schema/cache/spring-cache.xsd
+       http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring
+	   http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring/ehcache-spring-1.2.xsd
+	   http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	
+	<beans:bean id="localeResolver"
+		class="org.springframework.web.servlet.i18n.CookieLocaleResolver">
+		<beans:property name="defaultLocale" value="est" />
+		<beans:property name="cookieName" value="myAppLocaleCookie"></beans:property>
+		<beans:property name="cookieMaxAge" value="3600"></beans:property>
+	</beans:bean>
+
+	<mvc:interceptors>
+		<beans:bean
+			class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+			<beans:property name="paramName" value="lang" />
+		</beans:bean>
+	</mvc:interceptors>
+
+	<beans:bean id="messageSource"
+		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<beans:property name="basename" value="classpath:messages" />
+		<beans:property name="defaultEncoding" value="UTF-8" />
+	</beans:bean>
+
+
+	
+
+	<cache:annotation-driven />
+
+	<bean id="ehcache"
+		class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean" />
+
+
+	<bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
+		<constructor-arg ref="ehcache" />
+	</bean>
+
+	<bean id="mbeanServer" class="org.springframework.jmx.support.MBeanServerFactoryBean">
+		<property name="locateExistingServerIfPossible" value="true" />
+	</bean>
+
+	<bean class="net.sf.ehcache.management.ManagementService"
+		init-method="init">
+		<constructor-arg ref="ehcache" />
+		<constructor-arg ref="mbeanServer" />
+		<constructor-arg value="true" />
+		<constructor-arg value="true" />
+		<constructor-arg value="true" />
+		<constructor-arg value="true" />
+		<constructor-arg value="false" />
+	</bean>
+
+
+	<context:component-scan base-package="ee.ttu.shop">
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+
+
+	<context:annotation-config />
+
+
+	<bean id="gsonBuilder" class="com.google.gson.GsonBuilder">
+		<property name="dateFormat" value="yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'SSS'Z'" />
+	</bean>
+
+	<bean
+		class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="targetObject" ref="gsonBuilder" />
+
+		<property name="targetMethod" value="enableComplexMapKeySerialization" />
+	</bean>
+
+	<mvc:annotation-driven>
+		<mvc:message-converters>
+			<bean
+				class="org.springframework.http.converter.json.GsonHttpMessageConverter">
+				<property name="gson">
+					<bean class="com.google.gson.Gson" factory-bean="gsonBuilder"
+						factory-method="create" />
+				</property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+
+	<mvc:default-servlet-handler />
+
+
+	<security:global-method-security
+		pre-post-annotations="enabled" secured-annotations="enabled" />
+
+	<bean id="viewResolver1"
+		class="org.springframework.web.servlet.view.ResourceBundleViewResolver">
+		<property name="order" value="1" />
+		<property name="basename" value="views" />
+	</bean>
+
+	<bean id="viewResolver2"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="viewClass"
+			value="org.springframework.web.servlet.view.JstlView" />
+		<property name="order" value="2" />
+		<property name="prefix" value="/WEB-INF/jsp/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+</beans>
